@@ -1,0 +1,9 @@
+1. The biggest bug occurred because I initially flipped the order of the longitude and latitude coordinates in the location constructor. This made all of my calculations at the end very incorrect, and I was very confused. The next day I had a sudden epiphany and thought to check the order of the arguments!! This fixed all of the calculations :)
+
+2. I used stackoverflow a few times for specific methods especially using the scanner class to read files. Also I encountered a small bug in the beginning using "|" as a delimiter. I initially used split("|"), but stackoverflow let me know that "|" is read as "or" which resulted in a split for every "", meaning that it split off each letter. The proper regex for "|" ended up being "\\|", which I learned from a thread on stackoverflow.
+
+3. Most of the problems I encountered were already mentioned above.
+
+4. n/a?
+
+5. Even though lab 0 was pretty straight forward i'm excited to get back into coding projects. It was very fun and I enjoyed debugging a lot (that's probably kind of strange but I really like debugging programs).
