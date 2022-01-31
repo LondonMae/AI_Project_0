@@ -166,6 +166,41 @@ class Graph {
     }
     return connection;
   }
+
+
+
+  Node aStar(String id1, String id2) {
+    PriQueue<Node> frontier = new PriQueue<Node>();
+    Map<String, Node> reached = new HashMap<String, Node>();
+    float h = euclideanDist(id1, id2);
+    Node n = new Node(id1, null, 0, h);
+    reached.put(id1, n);
+    frontier.add(n);
+    Node next;
+    float distance;
+    float time;
+    String connection;
+
+    while (!frontier.isEmpty()) {
+      n = frontier.remove();
+      if (n.id.equals(id2)) {
+        return n;
+      }
+
+      for (Road r : roads.get(curr)) {
+        connection = findConnection(r, id);
+        distance = locations.get(id).distanceinMiles(locations.get(connection));
+        time = (distance/r.speedLimit)*3600;
+        h = euclideanDist(curr, connection);
+        next = new Node(connection, n, (n.g + time), h);
+        reached.put(connection, next);
+        frontier.add(next);
+      }
+
+    }
+    return null;
+  }
+
 }
 
 // Driver class
@@ -179,18 +214,18 @@ public class GraphWarmup {
       String filename = scan.nextLine();
       processInformation(filename, g);
 
-      String locationID;
+      String startID;
+      String endID;
       // loop for user to search id's.
       // terminates when user enters "0"
-      do {
-        System.out.print("Type a location ID for more information (type 0 to quit) ");
-        locationID = scan.nextLine();
-        if (!locationID.equals("0"))
-          g.printLocationInfo(locationID);
-      }
-      while (!locationID.equals("0"));
-      scan.close();
+      System.out.print("Starting location ID: ");
+      startID = scan.nextLine();
+      System.out.print("Ending location ID: ");
+      endID = scan.nextLine();
+
+      g.aStar(startID, endID);
   }
+
 
 
   /**
