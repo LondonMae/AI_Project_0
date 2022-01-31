@@ -64,6 +64,15 @@ class Location {
     // 3960 to get distance in miles
     return (float) (arc * 3960);
   }
+
+  float euclideanDist(Location other) {
+    float lat1 = this.latitude;
+    float long1 = this.longitude;
+    float lat2 = other.latitude;
+    float long2 = other.longitude;
+
+    return (float) Math.sqrt(Math.pow(lat1-lat2, 2) + Math.pow(long1-long2, 2));
+  }
 }
 
 // Road class: holds information for a specific road
@@ -167,34 +176,50 @@ class Graph {
     return connection;
   }
 
+  float g(String id1, String id2, float speedLimit) {
+    float distance = locations.get(id1).distanceinMiles(locations.get(id2));
+    float time = (distance/speedLimit)*3600;
+    return time;
+  }
 
+  float h(String id1, String id2) {
+    float distance = locations.get(id1).euclideanDist(locations.get(id2));
+    float time = (distance/65)*3600;
+    return time;
+  }
 
   Node aStar(String id1, String id2) {
-    PriQueue<Node> frontier = new PriQueue<Node>();
+    PriQueue<Node, Float> frontier = new PriQueue<Node, Float>();
     Map<String, Node> reached = new HashMap<String, Node>();
-    float h = euclideanDist(id1, id2);
-    Node n = new Node(id1, null, 0, h);
-    reached.put(id1, n);
-    frontier.add(n);
+
+    float h = h(id1, id2);
+    float g = 0;
+    Node n = new Node(id1, null, (g+h), g, h);
+    frontier.add(n, (g+h));
+
     Node next;
-    float distance;
-    float time;
     String connection;
 
     while (!frontier.isEmpty()) {
+
       n = frontier.remove();
-      if (n.id.equals(id2)) {
+      reached.put(n.state, n);
+      if (n.state.equals(id2)) {
+        System.out.println(n.state);
         return n;
       }
 
-      for (Road r : roads.get(curr)) {
-        connection = findConnection(r, id);
-        distance = locations.get(id).distanceinMiles(locations.get(connection));
-        time = (distance/r.speedLimit)*3600;
-        h = euclideanDist(curr, connection);
-        next = new Node(connection, n, (n.g + time), h);
-        reached.put(connection, next);
-        frontier.add(next);
+
+      for (Road r : roads.get(n.state)) {
+        connection = findConnection(r, n.state);
+        g = g(n.state, connection, r.speedLimit);
+        h = h(connection, id2);
+        next = new Node(connection, n, (n.g+g+h), (n.g + g), h);
+
+        if (!reached.containsKey(next.state) || (n.g + g) < reached.get(next.state).g) {
+          reached.put(next.state, next);
+          frontier.add(next, (h+n.g+g));
+        }
       }
 
     }
@@ -223,7 +248,11 @@ public class GraphWarmup {
       System.out.print("Ending location ID: ");
       endID = scan.nextLine();
 
-      g.aStar(startID, endID);
+      Node solution = g.aStar(startID, endID);
+      while (solution != null) {
+        System.out.println(solution.state);
+        solution = solution.parent;
+      }
   }
 
 
