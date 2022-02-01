@@ -226,6 +226,53 @@ class Graph {
     return null;
   }
 
+  Road findRoad (Node start, Node end) {
+      for (Road r : roads.get(start.state)) {
+        String connection = findConnection(r, start.state);
+        if (connection.equals(end.state)) {
+          return r;
+        }
+      }
+      return null;
+  }
+
+  void routeInfo(Node n) {
+    System.out.println(n.state + " (starting location)");
+    int count = 1;
+    float total_time = 0;
+    Road curr_road;
+
+    while (n.parent != null) {
+      curr_road = findRoad(n, n.parent);
+      total_time += g(n.state, n.parent.state, curr_road.speedLimit);
+      System.out.println(n.state + " (" + curr_road.name + ")");
+      n = n.parent;
+    }
+
+    System.out.println("total travel time in seconds: " + total_time);
+    System.out.println("nodes visited: " + total_time);
+
+  }
+
+  void gpsDirections(Node n) {
+    float timeOnStreet = 0;
+    Road curr_road = findRoad(n, n.parent);
+    Road next_road;
+
+    while (n.parent != null) {
+      curr_road = findRoad(n, n.parent);
+      total_time += g(n.state, n.parent.state, curr_road.speedLimit);
+      System.out.println(n.state + " (" + curr_road.name + ")");
+      n = n.parent;
+    }
+
+    System.out.println("total travel time in seconds: " + total_time);
+    System.out.println("nodes visited: " + total_time);
+
+  }
+
+
+
 }
 
 // Driver class
@@ -248,11 +295,11 @@ public class GraphWarmup {
       System.out.print("Ending location ID: ");
       endID = scan.nextLine();
 
-      Node solution = g.aStar(startID, endID);
-      while (solution != null) {
-        System.out.println(solution.state);
-        solution = solution.parent;
-      }
+      Node solution = g.aStar(endID, startID);
+
+      g.routeInfo(solution);
+      g.gpsDirections(solution);
+
   }
 
 
