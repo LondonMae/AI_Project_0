@@ -12,4 +12,13 @@ public class Node {
     this.g = g;
     this.h = h;
   }
+
+  public String toString() {
+    String p;
+    if (parent == null)
+      p = "null";
+    else
+      p = parent.state;
+    return "[State=" + state + ", parent=" + p + ", g=" + g + ", h=" + h + ", f=" + f + "]";
+  }
 }
