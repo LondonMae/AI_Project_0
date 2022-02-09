@@ -65,14 +65,6 @@ class Location {
     return (float) (arc * 3960);
   }
 
-  float euclideanDist(Location other) {
-    float lat1 = this.latitude;
-    float long1 = this.longitude;
-    float lat2 = other.latitude;
-    float long2 = other.longitude;
-
-    return (float) Math.sqrt(Math.pow(lat1-lat2, 2) + Math.pow(long1-long2, 2));
-  }
 }
 
 // Road class: holds information for a specific road
@@ -160,7 +152,7 @@ class Graph {
       }
       System.out.println();
     }
-    else { System.out.println("id " + id + " doeas not exist"); }
+    else { System.out.println("id " + id + " does not exist"); }
   }
 
   // find connection: if the given id is the first id,
@@ -186,7 +178,7 @@ class Graph {
 
   // returns estimated time between two locations
   float h(String id1, String id2) {
-    float distance = locations.get(id1).euclideanDist(locations.get(id2));
+    float distance = locations.get(id1).distanceinMiles(locations.get(id2));
     float time = (distance/65)*3600;
     return time;
   }
@@ -194,52 +186,77 @@ class Graph {
   // A* Algorithm:
   //  - takes two location id's and returns a node
   //     with pointers through path solution
-  Node aStar(String id1, String id2) {
+  Node aStar(String id1, String id2, boolean debug) {
     PriQueue<Node, Float> frontier = new PriQueue<Node, Float>(); // stores nodes available to look at
     Map<String, Node> reached = new HashMap<String, Node>(); // stores nodes already looked at
-    //String debug = "";
 
-    float h = h(id1, id2);
+    // gather information for init location
     float g = 0;
-    Node n = new Node(id1, null, (g+h), g, h);
-    frontier.add(n, (g+h));
+    float h = h(id1, id2);
+    float f = g + h;
+    Node n = new Node(id1, null, f, g, h);
 
+    // push starting node to frontier
+    frontier.add(n, f);
+
+    // init next node var and connection id var
     Node next;
     String connection;
 
+    int count = 1;
+    float total_time = 0;
+    // driving loop:
+    // continue searching until examining every node
+    // or until we have reached the goal state
     while (!frontier.isEmpty()) {
+      count++;
 
+      // visit node with lowest f-value
       n = frontier.remove();
-      //debug += "visiting: " + n.toString() + "\n";
       reached.put(n.state, n);
+      if (debug)
+        System.out.println("\nvisiting " + n.toString());
+
+      // if curr node is goal node, end algortihm
       if (n.state.equals(id2)) {
-        //System.out.println(n.state);
-        //System.out.println(debug);
+        System.out.println("\nnodes visited: " + count);
         return n;
       }
 
-
+      // for every road the connects to current location,
+      // add every connecting location to the fronter
       for (Road r : roads.get(n.state)) {
+        // generate next state node
         connection = findConnection(r, n.state);
-        g = g(n.state, connection, r.speedLimit);
+        g = n.g + g(n.state, connection, r.speedLimit);
         h = h(connection, id2);
-        next = new Node(connection, n, (n.g+g+h), (n.g + g), h);
+        f = g + h;
+        next = new Node(connection, n, f, g, h);
 
-
-        if (!reached.containsKey(next.state) || ((n.g + g) < reached.get(next.state).g)) {
+        // if child node has not already been examined
+        // or if child node f value is less than the one
+        // already examined, then add node
+        if (!reached.containsKey(next.state) || (g < reached.get(next.state).g)) {
           reached.put(next.state, next);
-          frontier.add(next, (h+n.g+g));
-          //debug += "adding: " + next.toString() + "\n";
+          frontier.add(next, f);
+          if (debug)
+            System.out.println("  adding: " + next.toString());
         }
-
+        else {
+          if (debug)
+            System.out.println("  skipping: " + next.toString());
+        }
       }
-
-
     }
+    // only returns null if goal state not found
     return null;
   }
 
-  Road findRoad (Node start, Node end) {
+  // find road:
+  //   - takes start node and end node and
+  //     determine which road you take to get
+  //     between the locations of the two nodes
+  Road findRoad (Node end, Node start) {
       for (Road r : roads.get(start.state)) {
         String connection = findConnection(r, start.state);
         if (connection.equals(end.state)) {
@@ -249,26 +266,28 @@ class Graph {
       return null;
   }
 
-  // void routeInfo(Node n) {
-  //   int count = 1;
-  //   float total_time = 0;
-  //   Road curr_road;
-  //   String route = "";
-  //
-  //   while (n.parent != null) {
-  //     curr_road = findRoad(n, n.parent);
-  //     total_time += g(n.state, n.parent.state, curr_road.speedLimit);
-  //     count++;
-  //     route+=("\n"+n.state + " (" + curr_road.name + ")");
-  //     n = n.parent;
-  //   }
-  //
-  //   System.out.println("\ntotal travel time in seconds: " + total_time);
-  //   System.out.println("nodes visited: " + count);
-  //   System.out.println("Route found is: \n" + route);
-  //
-  // }
+  // route info:
+  //   - takes goal state node and prints travel information
+  void routeInfo(Node n) {
+    routeInfoHelper(n, 0);
+  }
 
+  void routeInfoHelper(Node n, float time) {
+    if (n.parent == null) {
+      System.out.println("total travel time in seconds: " + time);
+      System.out.println("\nRoute found is:");
+      System.out.println("\n" + n.state + " (starting location)");
+      return;
+    }
+    Road curr_road = findRoad(n.parent, n);
+    float t =  g(n.state, n.parent.state, curr_road.speedLimit);
+    routeInfoHelper(n.parent, time + t);
+    System.out.println(n.state + " (" + curr_road.name + ")");
+  }
+
+   // degreesToDirection:
+   //    - takes degree between 0-360 and returns
+   //        direction as a string
   String degreesToDirection(float bearing) {
     if ((bearing <= 22.5) || (bearing >= 337.5))
       return "north";
@@ -289,20 +308,27 @@ class Graph {
     return "error";
   }
 
+  // get bearing:
+  //    - get bearing between 0-360 based on
+  //       lattitude and longitude of two locations
   float getBearing(Node n1, Node n2) {
+    // access locations
     Location loc1 = locations.get(n1.state);
     Location loc2 = locations.get(n2.state);
 
+    // get coordinates
     float lat1 = loc1.latitude;
     float lat2 = loc2.latitude;
     float long1 = loc1.longitude;
     float long2 = loc2.longitude;
 
+    // convert to radians
     lat1*=Math.PI/180;
     lat2*=Math.PI/180;
     long1*=Math.PI/180;
     long2*=Math.PI/180;
 
+    // math!
     float y = (float) (Math.sin(long2-long1) * Math.cos(lat2));
     float x = (float) (Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(long2-long1));
     float angle = (float) Math.atan2(y, x);
@@ -310,52 +336,72 @@ class Graph {
     return bearing;
   }
 
+  // based on change in rotation determine which direction to turn
   String turnDirection(float b1, float b2) {
-    if ((b2-b1<0) && (Math.abs(b2-b1) < 180))
+    if (((b2-b1<0) && (Math.abs(b2-b1) < 180)) || ((b2-b1>0) && (Math.abs(b2-b1) >= 180)))
       return "left";
-    else if ((b2-b1<0) && (Math.abs(b2-b1) >= 180))
+    else if (((b2-b1<0) && (Math.abs(b2-b1) >= 180)) || ((b2-b1>0) && (Math.abs(b2-b1) < 180)))
       return "right";
-    else if ((b2-b1>0) && (Math.abs(b2-b1) < 180))
-      return "right";
-    else if ((b2-b1>0) && (Math.abs(b2-b1) >= 180))
-      return "left";
     return "error";
   }
 
-  void gpsDirections(Node n) {
-    float timeOnStreet = 0;
-    Road curr_road = findRoad(n, n.parent);
-    Road next_road;
-    float curr_bearing = getBearing(n, n.parent);
-    float next_bearing;
-    String bearing = degreesToDirection(curr_bearing);
-    System.out.println("\nGPS directions: \nhead " + bearing + " on " + curr_road.name);
-    while (n.parent.parent != null) {
-      curr_road = findRoad(n, n.parent);
-      next_road = findRoad(n.parent, n.parent.parent);
-      curr_bearing = getBearing(n, n.parent);
-      next_bearing = getBearing(n.parent, n.parent.parent);
-      timeOnStreet += g(n.state, n.parent.state, curr_road.speedLimit);
-      if (!next_road.name.equals(curr_road.name)) {
-        bearing = degreesToDirection(curr_bearing);
-        System.out.println("   drive for " + timeOnStreet + " seconds");
-        timeOnStreet = 0;
-        System.out.println("turn " + turnDirection(curr_bearing, next_bearing) + " onto " + next_road.name);
-      }
-        n = n.parent;
-
-    }
-    curr_road = findRoad(n, n.parent);
-    timeOnStreet += g(n.state, n.parent.state, curr_road.speedLimit);
-    bearing = degreesToDirection(getBearing(n, n.parent));
-    System.out.println("   drive for " + timeOnStreet + " seconds");
-    System.out.println("you have arrived!");
-
-
-
+  String displaySeconds(float s) {
+    String display = "(";
+    int minutes = (int) (s/60);
+    int seconds = (int) (s%60);
+    if (minutes > 0)
+    display += minutes + " minutes and ";
+    return display + seconds + " seconds)";
   }
 
 
+  void gpsDirections(Node n) {
+    gpsDirectionsHelper(n, 0f, 0f);
+  }
+
+  // prints GPS directions from init to goal node
+  void gpsDirectionsHelper(Node n, float m, float t) {
+
+    if (n.parent == null) {
+      System.out.println("you have arrived!");
+      return;
+    }
+
+    Road prev_road;
+    float prev_bearing;
+    Road curr_road = findRoad(n.parent, n);
+    float curr_bearing = getBearing(n.parent, n);
+    String bearing = degreesToDirection(curr_bearing);
+    float timeOnStreet = g(n.state, n.parent.state, curr_road.speedLimit);
+    float miles = locations.get(n.state).distanceinMiles(locations.get(n.parent.state));
+
+    if (n.parent.parent == null) {
+      // print starting info
+      System.out.println("\nGPS directions: \nhead " + bearing + " on " + curr_road.name);
+      // print road info
+      System.out.println("   drive for " + (m + miles) + " miles " + displaySeconds(t + timeOnStreet));
+      return;
+    }
+
+    curr_road = findRoad(n, n.parent);
+    prev_road = findRoad(n.parent, n.parent.parent);
+    curr_bearing = getBearing(n.parent, n);
+    prev_bearing = getBearing(n.parent.parent, n.parent);
+
+    // whenever there is a change in roads, reset
+    if (!prev_road.name.equals(curr_road.name)) {
+      gpsDirectionsHelper(n.parent, 0f, 0f);
+      // print turning info
+      System.out.println("turn " + turnDirection(prev_bearing, curr_bearing) + " onto " + curr_road.name);
+      // print road info
+      System.out.println("   drive for " + (m + miles) + " miles " + displaySeconds(t + timeOnStreet));
+    }
+
+    else {
+
+      gpsDirectionsHelper(n.parent, m + miles, t + timeOnStreet);
+    }
+  }
 
 }
 
@@ -366,28 +412,35 @@ public class GraphWarmup {
       // process file information
       Graph g = new Graph();
       Scanner scan = new Scanner(System.in);
-      System.out.print("What file do you want to read? ");
-      String filename = scan.nextLine();
+      String filename = "memphis-medium.txt";
       processInformation(filename, g);
 
       String startID;
       String endID;
+      String debug;
+      Node solution = null;
       // loop for user to search id's.
       // terminates when user enters "0"
       System.out.print("Starting location ID: ");
       startID = scan.nextLine();
       System.out.print("Ending location ID: ");
       endID = scan.nextLine();
+      System.out.print("Do you want debugging information (y/n)? ");
+      debug = scan.nextLine();
 
-      Node solution = g.aStar(endID, startID);
+      // flip end and start for direction printing purposes
+      if (debug.equals("y"))
+        solution = g.aStar(startID, endID, true);
+      else if (debug.equals("n"))
+        solution = g.aStar(startID, endID, false);
 
-      //g.routeInfo(solution);
+      // print route information
+      g.routeInfo(solution);
       g.gpsDirections(solution);
 
       scan.close();
 
   }
-
 
 
   /**

@@ -1,11 +1,30 @@
-What bugs and conceptual difficulties did you encounter? How did you overcome them? What did you learn?
+1. What bugs and conceptual difficulties did you encounter? How did you overcome them? What did you learn?
 
+  - the actual A* algorithm was actually a lot easier/faster to implement than I was expecting!
+    The biggest issue was after my first attempt, I didn't check whether a node was already reached,
+    so I think the algorithm ended up in an infinite loop for some tests because of this.
+    I fixed this by checking for information about a node in reached before adding it.
 
+2. Describe whatever help (if any) that you received. Don’t include readings, lectures, and exercises,
+  but do include any help from other sources, such as websites or people (including classmates and friends) and attribute them by name.
 
-Describe whatever help (if any) that you received. Don’t include readings, lectures, and exercises, but do include any help from other sources, such as websites or people (including classmates and friends) and attribute them by name.
-
-only used textbook pseudocode and stackoverflow for a couple error messages
+  - only used textbook pseudocode and stackoverflow for a couple error messages
 
 Describe any serious problems you encountered while writing the program.
+
+  - Surprisingly I didn't encounter many problems other than what was mentioned
+  - This was small, but I initially had difficulties with the code for calculating
+      the direction because of some small errors in my if statements. This was an easy fix
+  - I think one think I should work on more is organizing code as I go because
+      I tend to get an idea and write very messy code that sometimes takes me a while
+      to understand when I look back on it. I comment my code all at once after writing
+      the entire project which probably isn't the most useful for myself
+
 Did you do any of the challenges (see below)? If so, explain what you did.
+
+  - I only did the first one although I was planning on doing more. I had my code on my PC when the power went out and didn't push the working version to Github
+      so I couldn't work on it when the power went out/when I went back home to St. Louis. But, I might work on the challenges more after submitting. 
+
 List any other feedback you have. Feel free to provide any feedback on how much you learned from doing the assignment, and whether you enjoyed doing it.
+  - Coding this was a very enjoyable experience! I think using memphis locations also makes it more rewarding
+    as a final product compared to using arbitrary/fake locations.
